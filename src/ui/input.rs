@@ -10,21 +10,17 @@ use crate::app::Focus;
 use crate::theme;
 
 pub fn render(frame: &mut Frame, area: Rect, input: &str, focus: Focus) {
-    let border = if focus == Focus::Sidebar || focus == Focus::Logs {
-        theme::BORDER
-    } else {
+    let border = if focus == Focus::Input {
         theme::SECONDARY
+    } else {
+        theme::BORDER
     };
 
     let block = Block::default()
         .borders(Borders::TOP)
         .border_style(Style::default().fg(border));
 
-    let cursor_visible = if focus != Focus::Sidebar && focus != Focus::Logs {
-        "█"
-    } else {
-        ""
-    };
+    let cursor_visible = if focus == Focus::Input { "█" } else { "" };
 
     let display = if input.is_empty() {
         " type a message or /help..."

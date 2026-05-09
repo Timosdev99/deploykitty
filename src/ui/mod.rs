@@ -1,4 +1,5 @@
 pub mod chat;
+pub mod content;
 pub mod header;
 pub mod input;
 pub mod logs;
@@ -20,7 +21,7 @@ pub fn ui(frame: &mut Frame, app: &mut AppState) {
         return;
     };
 
-    let [header_area, chat_area, input_area, logs_area] = *Layout::new(
+    let [header_area, content_area, input_area, logs_area] = *Layout::new(
         Direction::Vertical,
         [
             Constraint::Length(3),
@@ -36,7 +37,7 @@ pub fn ui(frame: &mut Frame, app: &mut AppState) {
 
     sidebar::render(frame, sidebar_area, app);
     header::render(frame, header_area);
-    chat::render(frame, chat_area, app);
+    content::render(frame, content_area, app);
     input::render(frame, input_area, &app.input, app.focus);
     logs::render(frame, logs_area, app);
 }
