@@ -26,7 +26,7 @@ pub fn render(frame: &mut Frame, area: Rect) {
         Span::styled("  \u{2022}  ", Style::default().fg(theme::COMMENT)),
         Span::styled("Ctrl+C / Esc: quit", Style::default().fg(theme::COMMENT)),
         Span::styled("  \u{2022}  ", Style::default().fg(theme::COMMENT)),
-        Span::styled("PgUp/PgDn: scroll", Style::default().fg(theme::COMMENT)),
+        Span::styled("PgUp/Dn: scroll | End: follow", Style::default().fg(theme::COMMENT)),
     ]))
     .style(theme::base().fg(theme::FG))
     .block(block);

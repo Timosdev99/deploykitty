@@ -5,7 +5,7 @@ use crossterm::event::{
     self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind,
 };
 
-use crate::app::{AppState, Focus, MENU_ITEMS, SIDEBAR_W};
+use crate::app::{AppState, Focus, MENU_ITEMS, SCROLL_PAGE_SIZE, SIDEBAR_W, sidebar_hit_test};
 
 pub fn handle_events(app: &mut AppState) -> Result<bool> {
     if event::poll(Duration::from_millis(50))? {
@@ -17,7 +17,8 @@ pub fn handle_events(app: &mut AppState) -> Result<bool> {
                 KeyCode::Esc => return Ok(true),
                 KeyCode::Tab => {
                     app.focus = match app.focus {
-                        Focus::Sidebar => Focus::Logs,
+                        Focus::Sidebar => Focus::Input,
+                        Focus::Input => Focus::Logs,
                         Focus::Logs => Focus::Sidebar,
                     };
                 }
@@ -33,9 +34,46 @@ pub fn handle_events(app: &mut AppState) -> Result<bool> {
                         app.selected_menu += 1;
                     }
                 }
-                KeyCode::Enter => {
-                    if app.focus == Focus::Sidebar {
-                        app.focus = Focus::Logs;
+                KeyCode::Enter => match app.focus {
+                    Focus::Sidebar => {
+                        app.focus = Focus::Input;
+                    }
+                    Focus::Input => {
+                        app.submit_input();
+                    }
+                    Focus::Logs => {}
+                },
+                KeyCode::PageUp => match app.focus {
+                    Focus::Sidebar | Focus::Input => {
+                        let offset = app.scroll_offset();
+                        app.set_scroll_offset(offset.saturating_sub(SCROLL_PAGE_SIZE));
+                        app.following_chat = false;
+                    }
+                    Focus::Logs => {
+                        app.logs_scroll_offset =
+                            app.logs_scroll_offset.saturating_sub(SCROLL_PAGE_SIZE);
+                    }
+                },
+                KeyCode::PageDown => match app.focus {
+                    Focus::Sidebar | Focus::Input => {
+                        app.set_scroll_offset(app.scroll_offset().saturating_add(SCROLL_PAGE_SIZE));
+                    }
+                    Focus::Logs => {
+                        app.logs_scroll_offset =
+                            app.logs_scroll_offset.saturating_add(SCROLL_PAGE_SIZE);
+                    }
+                },
+                KeyCode::End => {
+                    app.following_chat = true;
+                }
+                KeyCode::Char(ch) => {
+                    if app.focus == Focus::Input {
+                        app.input.push(ch);
+                    }
+                }
+                KeyCode::Backspace => {
+                    if app.focus == Focus::Input {
+                        app.input.pop();
                     }
                 }
                 _ => {}
@@ -46,18 +84,12 @@ pub fn handle_events(app: &mut AppState) -> Result<bool> {
                     let row = mouse.row;
 
                     if col < SIDEBAR_W {
-                        let item_start = 2u16;
-                        for i in 0..MENU_ITEMS.len() {
-                            let y0 = item_start + (i as u16) * 4;
-                            let y1 = y0 + 3;
-                            if row >= y0 && row <= y1 {
-                                app.selected_menu = i;
-                                app.focus = Focus::Sidebar;
-                                break;
-                            }
+                        if let Some(i) = sidebar_hit_test(row) {
+                            app.selected_menu = i;
+                            app.focus = Focus::Sidebar;
                         }
                     } else {
-                        app.focus = Focus::Logs;
+                        app.focus = Focus::Input;
                     }
                 }
             }

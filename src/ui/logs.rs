@@ -9,7 +9,7 @@ use ratatui::{
 use crate::app::{AppState, Focus};
 use crate::theme;
 
-pub fn render(frame: &mut Frame, area: Rect, app: &AppState) {
+pub fn render(frame: &mut Frame, area: Rect, app: &mut AppState) {
     let border = if app.focus == Focus::Logs {
         theme::GREEN
     } else {
@@ -36,8 +36,22 @@ pub fn render(frame: &mut Frame, area: Rect, app: &AppState) {
         })
         .collect();
 
+    let inner = block.inner(area);
+    let total = lines.len();
+    let view_h = inner.height as usize;
+
+    if total > view_h {
+        let max_scroll = total - view_h;
+        if app.logs_scroll_offset > max_scroll {
+            app.logs_scroll_offset = max_scroll;
+        }
+    } else {
+        app.logs_scroll_offset = 0;
+    }
+
     let paragraph = Paragraph::new(lines)
         .style(theme::base())
+        .scroll((app.logs_scroll_offset as u16, 0))
         .block(block)
         .wrap(Wrap { trim: false });
 

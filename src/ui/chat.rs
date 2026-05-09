@@ -91,8 +91,11 @@ pub fn render(frame: &mut Frame, area: Rect, app: &mut AppState) {
     let total = buf.len();
     let view_h = inner.height as usize;
 
-    if total > view_h && app.scroll_offset() == 0 {
-        app.set_scroll_offset(total - view_h);
+    if total > view_h {
+        let max_scroll = total - view_h;
+        if app.following_chat || app.scroll_offset() > max_scroll {
+            app.set_scroll_offset(max_scroll);
+        }
     }
     let scroll = app.scroll_offset().min(total.saturating_sub(1));
 

@@ -1,5 +1,10 @@
+#![allow(dead_code)]
+
 mod app;
 mod event;
+mod pipeline;
+mod profile;
+mod ssh;
 mod theme;
 mod ui;
 
@@ -19,6 +24,8 @@ use ui::ui;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+    let _ = profile::ensure_config_dir();
+
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
     stdout().execute(EnableMouseCapture)?;
@@ -29,6 +36,7 @@ fn main() -> Result<()> {
     while !should_quit {
         terminal.draw(|frame| ui(frame, &mut app))?;
         should_quit = handle_events(&mut app)?;
+        app.drain_ssh_events();
     }
 
     stdout().execute(DisableMouseCapture)?;

@@ -7,3 +7,7 @@ edition = "2024"
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
 ratatui = "0.30.0"
+ssh2 = "0.9.5"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+dirs = "6.0"

@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
-use crate::app::{AppState, MENU_ITEMS};
+use crate::app::{AppState, ConnectionState, MENU_ITEMS};
 use crate::theme;
 
 pub fn render(frame: &mut Frame, area: Rect, app: &AppState) {
@@ -20,6 +20,7 @@ pub fn render(frame: &mut Frame, area: Rect, app: &AppState) {
 
     let mut lines: Vec<Line> = Vec::new();
 
+    // Button rows: y=2..(2+N*4+3). Keep in sync with SIDEBAR_ITEM_Y0/STRIDE in app.rs.
     lines.push(Line::from(Span::styled(
         "  MENU",
         Style::default()
@@ -90,6 +91,20 @@ pub fn render(frame: &mut Frame, area: Rect, app: &AppState) {
             .fg(theme::COMMENT)
             .bg(theme::SIDEBAR_BG)
             .add_modifier(Modifier::ITALIC),
+    )));
+
+    let (status_icon, status_color) = match app.connection_state {
+        ConnectionState::Disconnected => ("\u{25cb}", theme::COMMENT),
+        ConnectionState::Connecting => ("\u{25d0}", theme::YELLOW),
+        ConnectionState::Connected => ("\u{25cf}", theme::GREEN),
+        ConnectionState::Failed => ("\u{2717}", theme::PRIMARY),
+    };
+    lines.push(Line::from(Span::styled(
+        format!("  {} SSH", status_icon),
+        Style::default()
+            .fg(status_color)
+            .bg(theme::SIDEBAR_BG)
+            .add_modifier(Modifier::BOLD),
     )));
 
     let paragraph = Paragraph::new(lines)
