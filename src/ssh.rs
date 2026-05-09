@@ -102,31 +102,23 @@ impl SshClient {
         script: &str,
         tx: mpsc::Sender<SshEvent>,
     ) -> Result<()> {
-        let host = profile.host.clone();
-        let port = profile.port;
-        let username = profile.username.clone();
-        let key_path = profile.key_path.clone();
-        let script = script.to_string();
-
+        let p = profile.clone();
+        let s = script.to_string();
         thread::spawn(move || {
-            let result = Self::run_script(host, port, username, key_path, script, tx.clone());
-            if let Err(e) = result {
-                let _ = tx.send(SshEvent::Error(format!("script error: {e}")));
+            match Self::exec_script_sync(&p, &s, tx.clone()) {
+                Ok(code) => { let _ = tx.send(SshEvent::Done(code)); }
+                Err(e) => { let _ = tx.send(SshEvent::Error(format!("script error: {e}"))); }
             }
         });
-
         Ok(())
     }
 
-    fn run_script(
-        host: String,
-        port: u16,
-        username: String,
-        key_path: String,
-        script: String,
+    pub fn exec_script_sync(
+        profile: &Profile,
+        script: &str,
         tx: mpsc::Sender<SshEvent>,
-    ) -> Result<()> {
-        let addr = format!("{host}:{port}");
+    ) -> Result<i32> {
+        let addr = format!("{}:{}", profile.host, profile.port);
         let tcp = std::net::TcpStream::connect(&addr)
             .map_err(|e| eyre!("failed to connect to {addr}: {e}"))?;
 
@@ -138,7 +130,12 @@ impl SshClient {
             .map_err(|e| eyre!("SSH handshake failed: {e}"))?;
 
         session
-            .userauth_pubkey_file(&username, None, std::path::Path::new(&key_path), None)
+            .userauth_pubkey_file(
+                &profile.username,
+                None,
+                std::path::Path::new(&profile.key_path),
+                None,
+            )
             .map_err(|e| eyre!("authentication failed: {e}"))?;
 
         if !session.authenticated() {
@@ -147,8 +144,7 @@ impl SshClient {
 
         let _ = tx.send(SshEvent::Connected);
 
-        let exit_code = Self::exec(&mut session, &script, &tx)?;
-        let _ = tx.send(SshEvent::Done(exit_code));
-        Ok(())
+        let exit_code = Self::exec(&mut session, script, &tx)?;
+        Ok(exit_code)
     }
 }

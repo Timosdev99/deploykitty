@@ -86,7 +86,7 @@ pub fn render(frame: &mut Frame, area: Rect, app: &AppState) {
     }
 
     lines.push(Line::from(Span::styled(
-        "  Tab to switch",
+        "  Tab: cycle focus",
         Style::default()
             .fg(theme::COMMENT)
             .bg(theme::SIDEBAR_BG)

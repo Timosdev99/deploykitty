@@ -1,9 +1,4 @@
-use std::sync::mpsc;
-
-use color_eyre::eyre::Result;
-
 use crate::profile::{AiAgent, Database, DeploymentTarget, ReverseProxy};
-use crate::ssh::{SshClient, SshEvent};
 
 pub struct Pipeline;
 
@@ -143,12 +138,18 @@ echo "=== Binary deploy scaffold done ==="
         }
     }
 
-    pub fn run_target(
-        profile: &crate::profile::Profile,
-        target: &DeploymentTarget,
-        tx: mpsc::Sender<SshEvent>,
-    ) -> Result<()> {
-        let script = Self::script_for(target);
-        SshClient::exec_script(profile, script, tx)
+    pub fn target_label(target: &DeploymentTarget) -> &'static str {
+        match target {
+            DeploymentTarget::Hardening => "System Hardening",
+            DeploymentTarget::Database(Database::Postgres) => "Postgres",
+            DeploymentTarget::Database(Database::Redis) => "Redis",
+            DeploymentTarget::Database(Database::MongoDB) => "MongoDB",
+            DeploymentTarget::ReverseProxy(ReverseProxy::Caddy) => "Caddy",
+            DeploymentTarget::ReverseProxy(ReverseProxy::Nginx) => "Nginx",
+            DeploymentTarget::AiAgent(AiAgent::Hermes) => "Hermes Agent",
+            DeploymentTarget::AiAgent(AiAgent::OpenClaw) => "OpenClaw Agent",
+            DeploymentTarget::DockerCompose => "Docker Compose",
+            DeploymentTarget::Binary => "Binary Deployment",
+        }
     }
 }
